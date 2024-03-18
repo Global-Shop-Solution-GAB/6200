@@ -1,0 +1,83 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sQuote.Declare(String,"")
+
+F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+	F.Intrinsic.Control.Case(11565)
+		F.Intrinsic.Control.CallSub(Pop_Sort)
+		
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6200_Quote_Order_Sort.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.Exit.Start
+F.Intrinsic.Control.SetErrorHandler("Exit_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.If(V.ODBC.Con.State,=,1)
+	F.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Exit_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.Exit.End
+
+Program.Sub.Pop_Sort.Start
+F.Intrinsic.Control.SetErrorHandler("Pop_Sort_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sQuote.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+V.Local.sOrder.Declare(String,"")
+
+F.Intrinsic.String.Format(V.Passed.000003,"0000000",V.Local.sOrder)
+
+F.Intrinsic.String.Build("Select Top 1 Order_No,Quote From V_Order_Header Where Order_No = '{0}'",V.Local.sOrder,V.Local.sSql)
+
+F.ODBC.Connection!con.OpenCompanyConnection
+
+F.Data.DataTable.CreateFromSQL("Order","con",V.Local.sSql,True)
+F.Intrinsic.Control.If(V.DataTable.Order.RowCount--,<>,-1)
+	F.Intrinsic.Control.If(V.DataTable.Order(V.DataTable.Order.RowCount--).Order_Sort_2!FieldValTrim,=,"")
+		V.Passed.000073.Set(V.DataTable.Order(V.DataTable.Order.RowCount--).Quote!FieldValTrim)
+		F.Intrinsic.String.Build("Update Order_Header Set Order_Sort_2 = '{0}' Where Order_No = '{1}' and Record_Type = 'A'",V.DataTable.Order(V.DataTable.Order.RowCount--).Quote!FieldValTrim,V.Local.sOrder,V.Local.sSql)
+		F.ODBC.Connection!Con.Execute(V.Local.sSql)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Data.DataTable.Close("Order")
+
+F.ODBC.Connection!con.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Pop_Sort_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6200_Quote_Order_Sort.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Pop_Sort.End
